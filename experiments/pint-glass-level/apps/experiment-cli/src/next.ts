@@ -25,7 +25,8 @@ const plan = JSON.parse(fs.readFileSync(planPath, 'utf8')) as {
 
 const completed = new Set<string>();
 if (fs.existsSync(manifestPath)) {
-  for (const line of fs.readFileSync(manifestPath, 'utf8').splitlines?.() ?? fs.readFileSync(manifestPath, 'utf8').split('\n')) {
+  const manifest = fs.readFileSync(manifestPath, 'utf8');
+  for (const line of manifest.split('\n')) {
     if (!line.trim()) continue;
     const row = JSON.parse(line);
     if (row.qualityStatus === 'accepted') {
@@ -34,11 +35,11 @@ if (fs.existsSync(manifestPath)) {
   }
 }
 
-const next = plan.captures.find((capture) => !completed.has(capture.captureId));
+const nextCapture = plan.captures.find((capture) => !completed.has(capture.captureId));
 const completeCount = plan.captures.filter((capture) => completed.has(capture.captureId)).length;
 
 console.log(`Progress: ${completeCount}/${plan.expectedCaptures}`);
-if (!next) {
+if (!nextCapture) {
   console.log('This session plan is complete.');
   console.log(`Next: python python/inspect_dataset.py --data data/raw --manifest ${manifestPath}`);
   process.exit(0);
@@ -46,17 +47,17 @@ if (!next) {
 
 console.log('');
 console.log('NEXT CAPTURE');
-console.log(`Fill: ${next.fillPercent}%`);
-console.log(`Pose: ${next.poseId}`);
-console.log(`Repetition: ${next.repetition}`);
+console.log(`Fill: ${nextCapture.fillPercent}%`);
+console.log(`Pose: ${nextCapture.poseId}`);
+console.log(`Repetition: ${nextCapture.repetition}`);
 console.log('');
 console.log('Before starting:');
 console.log('1. Remove yourself and the glass from the sensing path.');
-console.log(`2. Measure the glass to exactly ${next.fillPercent}% using the configured capacity.`);
+console.log(`2. Measure the glass to exactly ${nextCapture.fillPercent}% using the configured capacity.`);
 console.log('3. Confirm nobody else is in the sensing area.');
 console.log('4. Stand on the marked floor position only when ready to capture.');
 console.log('');
 console.log('Run:');
-console.log(`npm run collector -- --config ${configPath} --subject ${next.subjectId} --session ${next.sessionGroupId} --day ${next.dayId} --pose ${next.poseId} --fill ${next.fillPercent} --repetition ${next.repetition}`);
+console.log(`npm run collector -- --config ${configPath} --subject ${nextCapture.subjectId} --session ${nextCapture.sessionGroupId} --day ${nextCapture.dayId} --pose ${nextCapture.poseId} --fill ${nextCapture.fillPercent} --repetition ${nextCapture.repetition}`);
 console.log('');
 console.log(`After it finishes, run: npm run experiment:next -- --plan ${planPath}`);
