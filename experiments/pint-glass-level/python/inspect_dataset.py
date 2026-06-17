@@ -10,6 +10,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', required=True)
     parser.add_argument('--manifest', required=True)
+    parser.add_argument('--include-rejected', action='store_true')
+    parser.add_argument('--include-hardware-tests', action='store_true')
     args = parser.parse_args()
 
     manifest_path = Path(args.manifest)
@@ -23,6 +25,20 @@ def main() -> None:
     if missing_columns:
         raise SystemExit(f'Missing manifest columns: {missing_columns}')
 
+    excluded_hardware_tests = 0
+    excluded_rejected = 0
+    if not args.include_hardware_tests:
+        hardware_mask = df.sessionGroupId.astype(str).str.startswith('hardware-test')
+        excluded_hardware_tests = int(hardware_mask.sum())
+        df = df[~hardware_mask]
+    if not args.include_rejected and 'qualityStatus' in df.columns:
+        rejected_mask = df.qualityStatus != 'accepted'
+        excluded_rejected = int(rejected_mask.sum())
+        df = df[~rejected_mask]
+
+    if df.empty:
+        raise SystemExit('No accepted experiment captures remain after filtering')
+
     missing_files = [value for value in df['rawFile'] if not Path(value).exists()]
     duplicates = df[df.duplicated(['sessionGroupId', 'poseId', 'fillPercent', 'repetition'], keep=False)]
 
@@ -31,7 +47,9 @@ def main() -> None:
     lines = [
         '# Pint Glass CSI Dataset Report',
         '',
-        f'- Recordings: {len(df)}',
+        f'- Accepted experiment recordings: {len(df)}',
+        f'- Excluded hardware-test recordings: {excluded_hardware_tests}',
+        f'- Excluded rejected recordings: {excluded_rejected}',
         f'- Session groups: {df.sessionGroupId.nunique()}',
         f'- Subjects: {df.subjectId.nunique()}',
         f'- Poses: {df.poseId.nunique()}',
