@@ -66,12 +66,26 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', required=True)
     parser.add_argument('--manifest', required=True)
+    parser.add_argument('--include-rejected', action='store_true')
+    parser.add_argument('--include-hardware-tests', action='store_true')
     args = parser.parse_args()
 
     rows = [json.loads(line) for line in Path(args.manifest).read_text().splitlines() if line.strip()]
     df = pd.DataFrame(rows)
+    if df.empty:
+        raise SystemExit('No capture sessions found')
+
+    if not args.include_hardware_tests:
+        df = df[~df.sessionGroupId.astype(str).str.startswith('hardware-test')]
+    if not args.include_rejected and 'qualityStatus' in df.columns:
+        df = df[df.qualityStatus == 'accepted']
+
+    if df.empty:
+        raise SystemExit('No accepted experiment captures remain after filtering')
     if df.sessionGroupId.nunique() < 2:
         raise SystemExit('At least two independent sessionGroupId values are required')
+    if df.fillPercent.nunique() < 2:
+        raise SystemExit('At least two fill classes are required')
 
     x = np.vstack([extract_features(path) for path in df.rawFile])
     y = df.fillPercent.to_numpy()
@@ -99,7 +113,8 @@ def main() -> None:
             'classificationReport': classification_report(y[test_idx], predicted, output_dict=True, zero_division=0),
             'confusionMatrix': confusion_matrix(y[test_idx], predicted).tolist(),
             'trainGroups': sorted(set(groups[train_idx])),
-            'testGroups': sorted(set(groups[test_idx]))
+            'testGroups': sorted(set(groups[test_idx])),
+            'recordingsUsed': int(len(df))
         }
 
     output = report_dir / 'metrics.json'
