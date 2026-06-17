@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "collector": "tsx apps/collector-api/src/index.ts",
+    "experiment:create-plan": "tsx apps/experiment-cli/src/create-plan.ts",
+    "experiment:next": "tsx apps/experiment-cli/src/next.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
