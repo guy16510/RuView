@@ -1,0 +1,21 @@
+{
+  "udpHost": "0.0.0.0",
+  "udpPort": 5006,
+  "captureSeconds": 12,
+  "settleSeconds": 3,
+  "cooldownSeconds": 3,
+  "outputDirectory": "data/raw",
+  "manifestPath": "data/manifests/sessions.jsonl",
+  "roomId": "room-001",
+  "glassId": "pint-001",
+  "glassCapacityMl": 473,
+  "transmitterPositionId": "tx-a",
+  "receiverPositionId": "rx-a",
+  "distanceMeters": 1.5,
+  "minimumPacketsPerSecond": 40,
+  "poses": [
+    {"id": "chest-right", "height": "chest", "hand": "right", "orientationDegrees": 0},
+    {"id": "waist-right", "height": "waist", "hand": "right", "orientationDegrees": 0},
+    {"id": "mouth-right", "height": "mouth", "hand": "right", "orientationDegrees": 0}
+  ]
+}
